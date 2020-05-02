@@ -1,0 +1,103 @@
+MyDEAr - My Differential Expression Analysis in R
+========================================================
+author: Krzysztof Kolmus 
+date: 2020-05-02
+autosize: true
+
+Shiny app description
+========================================================
+
+**MyDEAr** *(My Differential Expression Analysis in R)* is designed for interactive exploration of high-throughput biological data sets from bulk RNA-sequencing experiments. It enables simultaneous arrangement and visualisation of experimental data. Dataset for MyDEAr was simulated based on the "airway" and "DESeq2" packages from Bioconductor to illustrate the principles of differential expression analysis.
+
+* The app can be found here: https://krzysztof-kolmus.shinyapps.io/mydear_developingdataproducts/
+* The code for this app can be found here: https://github.com/kkolmus/MyDEAr_DevelopingDataProducts/blob/master/app.R
+
+Data
+========================================================
+The data used for this app were simulated using the "airway" and "DESeq2" packages from Bioconductor. <br />
+<br />
+Columns are:
+  1. Gene name
+  2. Alternative gene name
+  3. Fold change ratio after differential expression analysis for positive control condition normalized   against control condition
+  4. P-value for positive control condition normalized against control condition after differential expression analysis 
+  5. Fold change ratio for treatment condition normalized against control condition
+  6. P-value for treatment condition normalized against control condition after differential expression analysis
+
+```{r}
+exp.data.frame <- readRDS("exp.data.frame.RDS")
+str(exp.data.frame)
+```
+
+
+Data arrangement
+========================================================
+The MyDEAr app arranges the sample data based on fold change ratio and p-value.
+```{r}
+suppressPackageStartupMessages(library(tidyverse))
+exp.data.frame <- readRDS("exp.data.frame.RDS")[,-c(3,4)]
+# show unarranged data
+head(exp.data.frame)
+exp.data.frame.arranged <- arrange(exp.data.frame, 
+                                   exp.data.frame$Treated_log2FC,
+                                   exp.data.frame$Treated_pval.adj)
+# show arranged data
+head(exp.data.frame.arranged)
+```
+
+Data classification
+========================================================
+The MyDEAr app classifies genes as either up- or down-regulated based on user defined thresholds.
+
+```{r}
+exp.data.frame <- readRDS("exp.data.frame.RDS")[,-c(3,4)]
+UP = 0.6; DOWN = -0.6; pval = 0.05
+exp.data.frame$Threshold <- ifelse(test = exp.data.frame$Treated_log2FC >= UP &
+                                     exp.data.frame$Treated_pval.adj < pval, 
+                                   yes = "Upregulated", 
+                                   ifelse(exp.data.frame$Treated_log2FC <= DOWN &
+                                            exp.data.frame$Treated_pval.adj < pval,
+                                          yes = "Downregulated", no = "Not significant"))
+# show classified data
+head(exp.data.frame)
+```
+
+
+Data visualization
+========================================================
+The MyDEAr app visualizes the output of classification using a special kind of scatter plot called volcano plot. <br />
+* The X axis shows the -log10 of p-values. <br />
+* The Y axis shows the log2 of fold change ratio between condition of interest and normalization condition. <br />
+* Each dot is a gene.<br />
+* Legend shows the results of classification.<br />
+
+```{r, echo = FALSE}
+exp.data.frame <- readRDS("exp.data.frame.RDS")[,-c(3,4)]
+UP = 0.6; DOWN = -0.6; pval = 0.05
+exp.data.frame$Threshold <- ifelse(test = exp.data.frame$Treated_log2FC >= UP &
+                                     exp.data.frame$Treated_pval.adj < pval, 
+                                   yes = "Upregulated", 
+                                   ifelse(exp.data.frame$Treated_log2FC <= DOWN &
+                                            exp.data.frame$Treated_pval.adj < pval,
+                                          yes = "Downregulated", no = "Not significant"))
+vp <- ggplot(data = exp.data.frame,
+                 mapping = aes(x = exp.data.frame$Treated_log2FC,
+                               y = -log10(exp.data.frame$Treated_pval.adj),
+                               color = exp.data.frame$Threshold)) +
+      geom_point(alpha = 0.3, size = 1) +
+      scale_color_manual(values = c("dodgerblue", "gold", "deeppink2")) +
+      ggtitle("Volcano plot") +
+      labs(color = "Expression pattern") +
+      xlab("log2FC") +
+      ylab("-log10(p-value)") +
+      theme_bw() +
+      theme(axis.text = element_text(size = 14, face = "bold", color = "black"),
+            axis.title = element_text(size = 14, face = "bold", color = "black"), 
+            plot.title = element_text(size = 21, face = "bold", color = "black", hjust = 0.5),
+            legend.title = element_text(size = 14, face = "bold", colour = "black"),
+            legend.text = element_text(size = 14, face = "bold", colour = "black"),
+            legend.position = "bottom") +
+      guides(color = guide_legend(override.aes = list(size = 2)))
+    
+print(vp)
+```
