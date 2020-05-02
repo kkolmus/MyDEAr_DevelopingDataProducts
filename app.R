@@ -97,6 +97,7 @@ ui <- fluidPage(
       
       # Output: Tabset w/ plot and table ----
       tabsetPanel(type = "tabs",
+                  tabPanel("Documentation", tableOutput("doc")),
                   tabPanel("Content", tableOutput("contents")),
                   tabPanel("Volcano Plot", plotOutput("volcano_plot")))
       
@@ -132,6 +133,22 @@ server <- function(input, output, session) {
     
     df
     
+  })
+  
+  output$doc <- renderText({
+    print(paste0("This tab explains how one should use the MyDEAr app. \n",
+          "User can play with a fake dataset to arrange, classify and visualize the results of bulk RNA-sequencing. \n",
+          "This fake dataset can be substituted with the results of bulk RNA-sequencing. \n",
+          "There should be at least one column with gene names, log2 fold change ratio and p-value. \n",
+          "User can choose from a drop down list, the column that contains gene names. \n",
+          "User can choose from a drop down list, the column that contains fold change. \n",
+          "User can choose from a drop down list, the column that contains p-value. \n",
+          "User can defind the values of threshold to classify genes as upregulated, downregulated or not significant. \n",
+          "User can arrange data based on fold change in ascending or descending order. \n",
+          "User can arrange data based on p-values. \n",
+          "User define column that contain gene names. \n",
+          "(1) The content tab displays arranged data and results of classification. \n",
+          "(2) The volcano plot tab displays a scatter plot colored based on user applied threshold. \n"))
   })
   
   output$contents <- renderTable({
